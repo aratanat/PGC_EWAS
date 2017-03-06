@@ -4,15 +4,15 @@
 
 rm(list=ls())
 
-# Edit 3
+setwd("/Users/ar3054/Dropbox/PTSD methylation workgroup Results Files/Non_Smoking/")
+homeDir<-"/Users/ar3054/Documents/R/PGC_EWAS/Current/PGC_EWAS/"
 
 ########################################################################################
-# Step 1: Determine Overlap
+# Step 1: Load Summary Statistics 
 ########################################################################################
-setwd("/Users/ly2207/Dropbox/PTSD methylation workgroup Results Files/Non_Smoking_with_Smoking_N/")
 
 # Step 1A: Load DNHS Results
-load("DNHS45_limma_results_nonSmokeWsmokeN_10.17.16.Rdata")
+load("DNHS100_limma_results_08.09.16.Rdata")
 DNHS.coef<-fit.coef
 rm(fit.coef)
 results<-results[order(results[, "P.Value"]), ]
@@ -24,7 +24,7 @@ DNHS.ebayes<-fit2.ebayes
 rm(fit2.ebayes)
 
 # Step 1B: Load GTP Results
-load("GTP_limma_onlysmoking_Current_PTSD_01_sum_age_sex_PC1_2_3_CD4_8_19_14.Rdata")
+load("GTP_limma_results_02.26.17.Rdata")
 GTP.coef<-fit.coef
 rm(fit.coef)
 results<-results[order(results[, "P.Value"]), ]
@@ -49,7 +49,7 @@ MRS.ebayes<-fit2.ebayes
 rm(fit2.ebayes)
 
 # Step 1D: Load Boston-VA Results
-load("BOSVA_limma_results_smokeMissRmv.Rdata")
+load("BostonVA_Dec_21_2015_limma_results.Rdata")
 VA.coef<-fit.coef
 rm(fit.coef)
 results<-results[order(results[, "P.Value"]), ]
@@ -61,7 +61,7 @@ VA.ebayes<-fit2.ebayes
 rm(fit2.ebayes)
 
 # Step 1E: Load PRISMO Data
-load("Utrecht_limma_smoking_resultsMissRmv.Rdata")
+load("utrecht3_limma_results.Rdata")
 PRISMO.coef<-fit.coef
 rm(fit.coef)
 results<-results[order(results[, "P.Value"]), ]
@@ -85,7 +85,7 @@ WTC.ebayes<-fit2.ebayes
 rm(fit2.ebayes)
 
 # Step 1G: Load Duke VA Data
-load("Duke_limma_results_smokeMissRmv_092016.Rdata")
+load("Duke_limma_results_103015.Rdata")
 DUKE.coef<-fit.coef
 rm(fit.coef)
 results<-results[order(results[, "P.Value"]), ]
@@ -95,7 +95,6 @@ DUKE.results<-results
 rm(results, rank)
 DUKE.ebayes<-fit2.ebayes
 rm(fit2.ebayes)
-
 
 # Step 1H: Load Army STARRS Data
 load("STARRS_limma_results_mar7_2016.Rdata")
@@ -110,7 +109,7 @@ AS.ebayes<-fit2.ebayes
 rm(fit2.ebayes)
 
 # Step 1I: Load MIRECC-AA Data
-load("Duke_AAset1_limma_results_smokeMissRmv_092016.Rdata")
+load("Duke_AAset1_limma_results_031616.Rdata")
 MIR.coef<-fit.coef
 rm(fit.coef)
 results<-results[order(results[, "P.Value"]), ]
@@ -121,15 +120,15 @@ rm(results, rank)
 MIR.ebayes<-fit2.ebayes
 rm(fit2.ebayes)
 
-setwd("/Users/ly2207/Documents/Andrew/R/PGC/08.09.16/NonSmokeWsmokeN/")
-save.image("PGC_Meta-Analysis_Data_DGMBPWDAM_nonSmokeWsmokeN_10.17.16.Rdata")
+setwd(homeDir)
+save.image("PGC_EWAS_combinedData.Rdata")
 rm(list=ls())
 
 ########################################################################################
 # # Step 2: QQ Plots of Individual Data Sources
 ########################################################################################
 
-load("PGC_Meta-Analysis_Data_DGMBPWDAM_nonSmokeWsmokeN_10.17.16.Rdata")
+load("PGC_EWAS_combinedData.Rdata")
 
 studies<-c("AS", "DNHS", "DUKE", "GTP", "MRS", "MIR", "PRISMO", "VA", "WTC")
 tab<-matrix(nrow=length(studies), ncol=9)
@@ -153,5 +152,4 @@ for(ii in 1:length(studies)){
   rm(p, chisq, coef, res)
 }
 
-
-write.csv(tab, "PGC_EWAS_DGMBPWDAM_nonSmokeWsmokeN_results.csv")
+write.csv(tab, "PGC_EWAS_individualCohort_results.csv")
