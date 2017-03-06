@@ -427,7 +427,7 @@ rm(list=ls())
 ########################################################################################
 
 load("PGC_EWAS_DataPrep_nonSmoke_remainingSites.Rdata")
-
+sites<-unique(sites)
 sites<-sites[!sites%in%all]
 
 # Step 2B: Add to list of sites the Study IDs

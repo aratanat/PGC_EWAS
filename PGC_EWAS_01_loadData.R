@@ -5,7 +5,7 @@
 rm(list=ls())
 
 setwd("/Users/ar3054/Dropbox/PTSD methylation workgroup Results Files/Non_Smoking/")
-homeDir<-"/Users/ar3054/Documents/R/PGC_EWAS/Current/PGC_EWAS/"
+homeDir<-"/Users/ar3054/Documents/R/PGC_EWAS/Current/PGC_EWAS/nonSmoke/"
 
 ########################################################################################
 # Step 1: Load Summary Statistics 
