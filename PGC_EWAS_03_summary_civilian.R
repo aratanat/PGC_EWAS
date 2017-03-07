@@ -25,6 +25,13 @@ all<-all[, colnames(results)]
 all(colnames(all)==colnames(results))
 results<-rbind(all, results)
 
+# Removing CpG sites not in at least two studies
+dim(results)
+results<-results[results[, "Studies"]!="DNHS",]
+results<-results[results[, "Studies"]!="GTP",]
+results<-results[results[, "Studies"]!="WTC",]
+dim(results)
+
 results<-results[order(as.numeric(results[, "p"])), ]
 FDR<-p.adjust(as.numeric(results[, "p"]), method="fdr", n=nrow(results))
 results<-cbind(results, FDR)
@@ -124,197 +131,118 @@ manhattan(df, suggestiveline=FALSE, genomewideline=cutpoint, ylim=c(0,8),
           chrlabs=labs, cex=1, cex.axis=1.5, cex.lab=2, col=c("blue4", "red4"))
 dev.off()
 
+rm(list=ls())
+
 ########################################################################################
-# Step 4: Top Results
+# Step 4: Top Results Table
 ########################################################################################
 
+load("PGC_EWAS_inverseNorm_allResults_civilian.Rdata")
 results<-results[as.numeric(results[, "p"])<=5*10^-5, ] # subsetting only most significant results
-
 rownames(results)<-results[, "CpG"]
-data(probe.features)
-rownames(results)%in%rownames(probe.features)
-p<-probe.features[rownames(results), ]
+results<-data.frame(results, stringsAsFactors=F)
+results$p<-as.numeric(results$p)
+results$FDR<-as.numeric(results$FDR)
+sites<-rownames(results)
 
-probe.features<-probe.features[rownames(results), c("gene", "feature")]
-rownames(results)[!rownames(results)==rownames(probe.features)]
-rownames(probe.features)
-
-rownames(results)
-probe.features$pvalue<-signif(as.numeric(results[, "p"]), 2)
-probe.features$FDR<-signif(as.numeric(results[, "FDR"]), 3)
-
-write.csv(probe.features, "PGC_EWAS_TopResults_civilian.csv")
-
-
-
-load("PGC_MA_FEM_DGMBPWDA_03.09.16.Rdata")
-View(FEM)
-
-
-
-# Subset Individual Study Information
-
-
-load("PGC_EWAS_DataPrep_nonSmoke.Rdata")
-
-results<-results[as.numeric(results[, "p"])<=5*10^-5, ] # subsetting only most significant results
-results<-results[order(as.numeric(results[, "p"])), ]
-
-rownames(results)<-results[, "CpG"]
-data(probe.features)
-probe.features<-probe.features[results[, "CpG"], c("gene", "feature")]
-all(rownames(results)==rownames(probe.features))
-probe.features$pvalue<-signif(as.numeric(results[, "p"]), 2)
-probe.features$FDR<-signif(as.numeric(results[, "FDR"]), 3)
-
-write.csv(probe.features, "PGC_EWAS_TopResults_09.15.16.csv")
-
-# Subsetting individual site data
-results<-results[results[, "Studies"]=="DNHS, GTP, WTC", ]
+# Generic Inverse Variance Method for weighted beta coefficients
+load("PGC_EWAS_DataPrep_nonSmoke_civilian.Rdata")
+rm(list=ls()[grep("ebayes", ls())])
 
 colnames(DNHS.coef) 
-DNHS.coef<-DNHS.coef[rownames(results),c("PTSDpm", "N.subjects")] # just the PTSD coefficient and number of subjects needed
-DNHS.results<-DNHS.results[rownames(results),]
+DNHS.coef<-DNHS.coef[rownames(DNHS.coef)%in%sites,c("PTSDpm", "N.subjects")] 
+DNHS.results<-DNHS.results[rownames(DNHS.coef),]
 colnames(DNHS.coef)<-c("PTSD", "N.subjects") # need consistent column headings
 all(rownames(DNHS.coef)==rownames(DNHS.results))
 DNHS<-data.frame(DNHS.coef, DNHS.results)
-str(DNHS) # should all be numbers nut factors
+str(DNHS) # should all be numbers not factors
 DNHS$s.e.<-DNHS$PTSD/DNHS$t # calculate the standard error
 DNHS$weight<-1/(DNHS$s.e.^2) # calculate weight
-str(DNHS) # should all be numbers not factors before converting to matrix
-DNHS.m<-as.matrix(DNHS ) # matrices speed up calculations over dataframes
-all(DNHS.m==DNHS) 
-DNHS<-DNHS.m
-rm(DNHS.results, DNHS.m)
+rm(DNHS.results, DNHS.coef, DNHS.oneSided)
 
 colnames(GTP.coef)
-GTP.coef<-GTP.coef[rownames(results),c("Current_PTSD_01_sum", "N.subjects")]
-GTP.results<-GTP.results[rownames(results),]
+GTP.coef<-GTP.coef[rownames(GTP.coef)%in%sites,c("PTSDcurr", "N.subjects")]
+GTP.results<-GTP.results[rownames(GTP.coef),]
 colnames(GTP.coef)<-c("PTSD", "N.subjects")
 all(rownames(GTP.coef)==rownames(GTP.results))
 GTP<-data.frame(GTP.coef, GTP.results)
 str(GTP)
 GTP$s.e.<-GTP$PTSD/GTP$t # calculate the standard error
 GTP$weight<-1/(GTP$s.e.^2) # calculate weight
-str(GTP)
-GTP.m<-as.matrix(GTP)
-all(GTP.m==GTP)
-GTP<-GTP.m
-rm(GTP.results, GTP.m)
+rm(GTP.results, GTP.coef, GTP.oneSided)
 
 colnames(WTC.coef)
-WTC.coef<-WTC.coef[rownames(results),c("PTSD", "N.subjects")]
-WTC.results<-WTC.results[rownames(results),]
+WTC.coef<-WTC.coef[rownames(WTC.coef)%in%sites,c("PTSD", "N.subjects")]
+WTC.results<-WTC.results[rownames(WTC.coef),]
 colnames(WTC.coef)<-c("PTSD", "N.subjects")
 all(rownames(WTC.coef)==rownames(WTC.results))
 WTC<-data.frame(WTC.coef, WTC.results)
 str(WTC)
 WTC$s.e.<-WTC$PTSD/WTC$t # calculate the standard error
 WTC$weight<-1/(WTC$s.e.^2) # calculate weight
-str(WTC)
-WTC.m<-as.matrix(WTC)
-all(WTC.m==WTC)
-WTC<-WTC.m
-rm(WTC.results, WTC.m)
+rm(WTC.results, WTC.coef, WTC.oneSided)
 
-all(rownames(results)==rownames(DNHS))
-all(rownames(results)==rownames(GTP))
-all(rownames(results)==rownames(WTC))
+results$WTC.beta<-results$GTP.beta<-results$DNHS.beta<-NA
+results$variance<-results$beta<-NA
 
-rm(list=ls()[grep("ebayes", ls())])
-
-save.image("PGC_EWAS_resultsData_civilian.Rdata")
-
-rm(list=ls())
-
-
-
-########################################################################################
-# Step 4: Generate Forest Plots
-########################################################################################
-
-load("PGC_Meta-Analysis_Data_Limma_DGMBPWDAMI_04_09.15.16.Rdata")
-
-FEM<-matrix(nrow=nrow(results), ncol=8)
-rownames(FEM)<-rownames(results)
-colnames(FEM)<-c("beta_avg", "var_avg", "lower", "upper", "sig", "Q", "Q_pval", "I2")
-
-all(rownames(results)==rownames(DNHS))
-all(rownames(results)==rownames(GTP))
-all(rownames(results)==rownames(MRS))
-all(rownames(results)==rownames(VA))
-all(rownames(results)==rownames(WTC))
-all(rownames(results)==rownames(PRISMO))
-all(rownames(results)==rownames(DUKE))
-all(rownames(results)==rownames(AS))
-all(rownames(results)==rownames(MIR))
-all(rownames(results)==rownames(TRUST))
-all(rownames(results)==rownames(FEM))
-
-
-for(ii in 1:nrow(FEM)){
-  weights<-c(DNHS[ii, "weight"], GTP[ii, "weight"], MRS[ii, "weight"], VA[ii, "weight"],
-             PRISMO[ii, "weight"], WTC[ii, "weight"], DUKE[ii, "weight"], AS[ii, "weight"],
-             MIR[ii, "weight"], TRUST[ii, "weight"])
-  betas<-c(DNHS[ii, "PTSD"], GTP[ii, "PTSD"], MRS[ii, "PTSD"], VA[ii, "PTSD"],
-           PRISMO[ii, "PTSD"], WTC[ii, "PTSD"], DUKE[ii, "PTSD"], AS[ii, "PTSD"],
-           MIR[ii, "PTSD"], TRUST[ii, "PTSD"])
-  avg<-sum(betas*weights)/sum(weights)
-  FEM[ii, "beta_avg"]<-avg
-  var<-1/sum(weights)
-  FEM[ii, "var_avg"]<-var
-  lower<-avg-(1.96*sqrt(var))
-  FEM[ii, "lower"]<-lower
-  upper<-avg+(1.96*sqrt(var))
-  FEM[ii, "upper"]<-upper
-  if(upper > 0 && lower > 0){
-    FEM[ii, "sig"]<-"significant"
-  } else if(upper< 0 && lower < 0){
-    FEM[ii, "sig"]<-"significant"
-  } else {
-    FEM[ii, "sig"]<-"non-significant"
+for(ii in 1:nrow(results)){
+  cpg<-rownames(results)[ii]
+  weights<-NULL
+  betas<-NULL
+  studies<-unlist(strsplit(results[ii, "Studies"], ", "))
+  for(jj in 1:length(studies)){
+    temp<-get(paste(studies[jj]))
+    weights<-append(weights, temp[cpg, "weight"])
+    betas<-append(betas, temp[cpg, "PTSD"])
+    results[cpg, paste(studies[jj], ".beta", sep="")]<-temp[cpg, "PTSD"]
+    
   }
-  Q<-sum(weights*((betas-avg)^2))
-  FEM[ii, "Q"]<-Q
-  FEM[ii, "Q_pval"]<-pchisq(Q, df=10-1, lower.tail=FALSE) # 10 studies - 1 for degrees of freedom
-  I2<-max(0, (Q-(10-1))/Q)
-  FEM[ii, "I2"]<-I2
-  if(ii%%10000==0){
-    print(ii)
-  }
+  results[cpg, "beta"]<-sum(betas*weights)/sum(weights)
+  results[cpg, "variance"]<-1/sum(weights)
 }
 
-pdf("PGC_MA_ForestPlots_Limma_DGMBPWDAMI_09.15.16.pdf")
-for(ii in 1:nrow(DNHS)){
-  betas<-c(DNHS[ii, "PTSD"], GTP[ii, "PTSD"], MRS[ii, "PTSD"], 
-           PRISMO[ii, "PTSD"], DUKE[ii, "PTSD"], VA[ii, "PTSD"], WTC[ii, "PTSD"], 
-           AS[ii, "PTSD"], MIR[ii, "PTSD"], TRUST[ii, "PTSD"])
-  stderr<-c(DNHS[ii, "s.e."], GTP[ii, "s.e."], MRS[ii, "s.e."], 
-            PRISMO[ii, "s.e."], DUKE[ii, "s.e."], VA[ii, "s.e."], WTC[ii, "s.e."],
-            AS[ii, "s.e."], MIR[ii, "s.e."], TRUST[ii, "s.e."])
-  lower<-betas-1.96*stderr
-  upper<-betas+1.96*stderr
-  weights<-c(DNHS[ii, "weight"], GTP[ii, "weight"], MRS[ii, "weight"], 
-             PRISMO[ii, "weight"], DUKE[ii, "weight"], VA[ii, "weight"], WTC[ii, "weight"],
-             AS[ii, "weight"], MIR[ii, "weight"], TRUST[ii, "weight"])
-  betaC<-sum(betas*weights)/sum(weights)
-  stderrC<-1/sum(weights)
-  lowerC<-betaC-(1.96*sqrt(stderrC))
-  upperC<-betaC+(1.96*sqrt(stderrC))
+data(probe.features)
+probe.features<-probe.features[rownames(results), c("CHR", "MAPINFO", "gene", "feature")]
+probe.features<-cbind(results, probe.features)
+probe.features<-probe.features[, c("Studies", "CpG", "CHR", "MAPINFO", "gene", "feature",
+                                   "beta", "variance", "p", "FDR", 
+                                   "DNHS.beta", "GTP.beta", "WTC.beta")]
+colnames(probe.features)<-c("Studies", "CpG", "CHR", "Position", "Gene", "Feature", 
+                            "beta", "variance", "p-value", "FDR", 
+                            "DNHS.beta", "GTP.beta", "WTC.beta")
+
+rownames(probe.features)<-c(1:nrow(probe.features))
+write.csv(probe.features, "PGC_EWAS_TopResults_civilian.csv")
+rm(list=ls())
+
+########################################################################################
+# Step 5: Forest Plots
+########################################################################################
+
+results<-read.csv("PGC_EWAS_TopResults_civilian.csv", row.names=1, stringsAsFactors=F)
+
+pdf("PGC_EWAS_Civilian_forestPlots.pdf")
+for(ii in 1:nrow(results)){
+  beta<-results[ii, "beta"]
+  variance<-results[ii, "variance"]
+  lower<-beta-(1.96*sqrt(variance))
+  upper<-beta+(1.96*sqrt(variance))
+  
+  betas<-as.numeric(results[ii, c("DNHS.beta", "GTP.beta", "WTC.beta")])
   beta.table<-c("",
-                "Beta", round(betas,3), NA, round(betaC,3))
-  betas<-c(NA, NA, round(betas,3), NA, round(betaC,3))
-  lower<-c(NA, NA, lower, NA, lowerC)
-  upper<-c(NA, NA, upper, NA, upperC)
-  studies<-c(rownames(DNHS)[ii], "Study", "DNHS", "GTP", "MRS", "PRISMO", "VA-M", "VA-NCP", "WTC", "AS", 
-             "MIR", "TRUST", NA, "Summary")
+                "Beta", round(betas,3), NA, round(beta,3))
+  betas<-c(NA, NA, round(betas,3), NA, round(beta,3))
+  lower<-c(NA, NA, lower, NA, lower)
+  upper<-c(NA, NA, upper, NA, upper)
+  
+  studies<-c(results[ii, "CpG"], "Study", "DNHS", "GTP", "WTC", NA, "Summary")
   summary<-cbind(studies, beta.table)
   # Call forestplot
   cochrane<-data.frame(betas, lower, upper)
   forestplot(summary, cochrane, 
              #boxsize=0.5, lwd.ci=1.5, 
              new_page = TRUE, 
-             is.summary=c(TRUE,TRUE,rep(FALSE,10),TRUE),
+             is.summary=c(TRUE,TRUE,rep(FALSE,4),TRUE),
              xlog=FALSE, #lineheight=unit(1,"cm"),
              col=fpColors(box="black",line="black", summary="royalblue"),
              xticks=(c(-0.4, -0.2, 0.1)),
