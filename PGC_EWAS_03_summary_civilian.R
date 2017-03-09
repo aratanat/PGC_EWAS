@@ -8,7 +8,7 @@ library(ChAMP)
 library(forestplot)
 library(qqman)
 
-setwd("/Users/ly2207/Documents/Andrew/R/PGC/Current/PGC_EWAS/Civilian/nonSmoke/")
+setwd("/Users/ar3054/Documents/R/PGC_EWAS/Current/PGC_EWAS/Civilian/nonSmoke/")
 
 ########################################################################################
 # Step 1: Loading Data
@@ -291,3 +291,4 @@ for(ii in 1:sigs){
   dev.off()
 }
 
+V

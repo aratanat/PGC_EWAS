@@ -1,5 +1,5 @@
 ########################################################################################
-# PGC EWAS Civilian Meta-Analysis: Summarizing Smoking Results
+# PGC EWAS Civilian Meta-Analysis: Summarizing Results
 ########################################################################################
 
 rm(list=ls())
@@ -8,15 +8,15 @@ library(ChAMP)
 library(forestplot)
 library(qqman)
 
-setwd("/Users/ar3054/Documents/R/PGC_EWAS/Current/PGC_EWAS/Civilian/Smoking/")
+setwd("/Users/ar3054/Documents/R/PGC_EWAS/Current/PGC_EWAS/Civilian/Male/")
 
 ########################################################################################
 # Step 1: Loading Data
 ########################################################################################
 
 # Combining results files
-load("PGC_EWAS_smoking_inverseNorm_intersectSites_civilian.Rdata")
-load("PGC_EWAS_smoking_inverseNorm_remainingSites_civilian.Rdata")
+load("PGC_EWAS_nonSmoke_inverseNorm_intersectSites_civilian_males.Rdata")
+load("PGC_EWAS_nonSmoke_inverseNorm_remainingSites_civilian_males.Rdata")
 
 all<-pval.combined.marot
 rm(pval.combined.marot)
@@ -37,7 +37,7 @@ dim(results)
 results<-results[order(as.numeric(results[, "p"])), ]
 FDR<-p.adjust(as.numeric(results[, "p"]), method="fdr", n=nrow(results))
 results<-cbind(results, FDR)
-save(results, file="PGC_EWAS_inverseNorm_allResults_civilian_smoking.Rdata")
+save(results, file="PGC_EWAS_inverseNorm_allResults_civilian_males.Rdata")
 
 # Summary info
 tab<-matrix(nrow=9, ncol=2)
@@ -63,7 +63,7 @@ tab["N sites in 1 study", "Value"]<-sum(nStudies==1)
 tab["CpG sites", "Value"]<-nrow(results)
 rownames(tab)<-c(1:nrow(tab))
 
-write.csv(tab, file="PGC_EWAS_inverseNorm_allResults_civilian_smoking_summary.csv")
+write.csv(tab, file="PGC_EWAS_inverseNorm_allResults_civilian_males_summary.csv")
 rm(list=ls()[-match("results", ls())])
 
 ########################################################################################
@@ -81,7 +81,7 @@ ggd.qqplot = function(pvector, main=NULL, ...) {
 }
 pvalue <- as.numeric(results[, "p"])
 
-png("PGC_EWAS_inverseNorm_QQplot_civilian_smoking.png", width=1280, height=960, units="px", bg="white")
+png("PGC_EWAS_inverseNorm_QQplot_civilian_males.png", width=1280, height=960, units="px", bg="white")
 par(mar=c(10,10,4,2), mgp=c(6,2,0))
 ggd.qqplot(pvalue, main = paste(""))
 dev.off()
@@ -94,7 +94,7 @@ rm(list=ls()[-match("results", ls())])
 
 rm(list=ls())
 
-load("PGC_EWAS_inverseNorm_allResults_civilian_smoking.Rdata")
+load("PGC_EWAS_inverseNorm_allResults_civilian_males.Rdata")
 rownames(results)<-results[, "CpG"]
 data(probe.features)
 results<-results[which(rownames(results)%in%rownames(probe.features)),]
@@ -122,7 +122,7 @@ labs<-c(1:22, "X", "Y")
 
 opar<-par()
 
-png("PGC_EWAS_manhattan_civilian_smoking.png",height=600, width=1200, units="px")
+png("PGC_EWAS_manhattan_civilian_males.png",height=600, width=1200, units="px")
 par(mar=c(5.1,6.1, 4.1, 2.1))
 manhattan(df, suggestiveline=FALSE, genomewideline=cutpoint, ylim=c(0,8),
           chrlabs=labs, cex=1, cex.axis=1.5, cex.lab=2, col=c("blue4", "red4"))
@@ -134,15 +134,19 @@ rm(list=ls())
 # Step 4: Top Results Table
 ########################################################################################
 
-load("PGC_EWAS_inverseNorm_allResults_civilian_smoking.Rdata")
+load("PGC_EWAS_inverseNorm_allResults_civilian_males.Rdata")
+rownames(results)<-results[, "CpG"]
+nrg<-results["cg23637605",]
 results<-results[as.numeric(results[, "p"])<=5*10^-5, ] # subsetting only most significant results
+results<-rbind(nrg, results)
+
 rownames(results)<-results[, "CpG"]
 results<-data.frame(results, stringsAsFactors=F)
 results$p<-as.numeric(results$p)
 results$FDR<-as.numeric(results$FDR)
 sites<-rownames(results)
 
-load("PGC_EWAS_DataPrep_smoking_civilian.Rdata")
+load("PGC_EWAS_DataPrep_nonSmoke_civilian_males.Rdata")
 rm(list=ls()[grep("ebayes", ls())])
 
 colnames(DNHS.coef)
@@ -215,13 +219,13 @@ colnames(probe.features)<-c("Studies", "CpG", "CHR", "Position", "Gene", "Featur
                             "DNHS.N", "GTP.N", "WTC.N")
 
 rownames(probe.features)<-c(1:nrow(probe.features))
-write.csv(probe.features, "PGC_EWAS_TopResults_civilian_smoking.csv")
+write.csv(probe.features, "PGC_EWAS_TopResults_civilian_males.csv")
 rm(list=ls())
 
-results<-read.csv("PGC_EWAS_TopResults_civilian_smoking.csv", row.names=1, stringsAsFactors=F)
+results<-read.csv("PGC_EWAS_TopResults_civilian_males.csv", row.names=1, stringsAsFactors=F)
 studies<-c("DNHS", "GTP", "WTC")
 
-pdf("PGC_EWAS_Civilian_smoking_forestPlots.pdf")
+pdf("PGC_EWAS_Civilian_forestPlots_males.pdf")
 for(ii in 1:nrow(results)){
   betas<-as.numeric(results[ii,paste(studies, ".beta", sep="")])
   stderr<-as.numeric(results[ii,paste(studies, ".se", sep="")])
@@ -256,38 +260,42 @@ dev.off()
 
 # Significant Sites
 sigs<-length(results[as.numeric(results[, "FDR"]<=0.05), "FDR"])
-
-for(ii in 1:sigs){
-  betas<-as.numeric(results[ii,paste(studies, ".beta", sep="")])
-  stderr<-as.numeric(results[ii,paste(studies, ".se", sep="")])
-  lower<-betas-1.96*stderr
-  upper<-betas+1.96*stderr
-  betaC<-results[ii, "beta"]
-  stderrC<-results[ii, "variance"]
-  lowerC<-betaC-(1.96*sqrt(stderrC))
-  upperC<-betaC+(1.96*sqrt(stderrC))
-  beta.table<-c("", "Beta", round(betas,3), NA, round(betaC,3))
-  subjs<-results[ii,paste(studies, ".N", sep="")]
-  Ns<-as.character(unlist(c("", "N", subjs, NA, sum(subjs))))
-  betas<-c(NA, NA, round(betas,3), NA, round(betaC,3))
-  lower<-c(NA, NA, lower, NA, lowerC)
-  upper<-c(NA, NA, upper, NA, upperC)
-  stud<-c(results[ii, "CpG"], "Study", studies, NA, "Summary")
-  summary<-cbind(stud, beta.table, Ns)
-  summary[which(is.na(summary))]<-""
-  
-  # Call forestplot
-  cochrane<-data.frame(betas, lower, upper)
-  png(paste("PGC_EWAS_Civilian_smoking_", results[ii, "CpG"], ".png", sep=""), width=960, height=640,units="px")
-  forestplot(summary, cochrane,
-             boxsize=c(0.8, 0.8, 0.4, 0.6, 0.5), lwd.ci=1.5,
-             new_page = TRUE,
-             is.summary=c(TRUE,TRUE,rep(FALSE,3),TRUE),
-             xlog=FALSE, #lineheight=unit(1,"cm"),
-             col=fpColors(box="black",line="black", summary="royalblue"),
-             xticks=(c(-0.4, -0.2, 0.1)),
-             txt_gp = fpTxtGp( label = list(gpar(fontfamily="", cex=3)),
-                               ticks = gpar(fontfamily = "", cex=2)))
-  dev.off()
+if(sigs==0){
+  sigs<-sigs+1
 }
 
+if(sigs>0){
+  for(ii in 1:sigs){
+    betas<-as.numeric(results[ii,paste(studies, ".beta", sep="")])
+    stderr<-as.numeric(results[ii,paste(studies, ".se", sep="")])
+    lower<-betas-1.96*stderr
+    upper<-betas+1.96*stderr
+    betaC<-results[ii, "beta"]
+    stderrC<-results[ii, "variance"]
+    lowerC<-betaC-(1.96*sqrt(stderrC))
+    upperC<-betaC+(1.96*sqrt(stderrC))
+    beta.table<-c("", "Beta", round(betas,3), NA, round(betaC,3))
+    subjs<-results[ii,paste(studies, ".N", sep="")]
+    Ns<-as.character(unlist(c("", "N", subjs, NA, sum(subjs))))
+    betas<-c(NA, NA, round(betas,3), NA, round(betaC,3))
+    lower<-c(NA, NA, lower, NA, lowerC)
+    upper<-c(NA, NA, upper, NA, upperC)
+    stud<-c(results[ii, "CpG"], "Study", studies, NA, "Summary")
+    summary<-cbind(stud, beta.table, Ns)
+    summary[which(is.na(summary))]<-""
+    
+    # Call forestplot
+    cochrane<-data.frame(betas, lower, upper)
+    png(paste("PGC_EWAS_Civilian_males_", results[ii, "CpG"], ".png", sep=""), width=960, height=640,units="px")
+    forestplot(summary, cochrane,
+               boxsize=c(0.8, 0.8, 0.4, 0.6, 0.5), lwd.ci=1.5,
+               new_page = TRUE,
+               is.summary=c(TRUE,TRUE,rep(FALSE,3),TRUE),
+               xlog=FALSE, #lineheight=unit(1,"cm"),
+               col=fpColors(box="black",line="black", summary="royalblue"),
+               xticks=(c(-0.4, -0.2, 0.1)),
+               txt_gp = fpTxtGp( label = list(gpar(fontfamily="", cex=3)),
+                                 ticks = gpar(fontfamily = "", cex=2)))
+    dev.off()
+  }
+}
